@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Status</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>WhatsApp Link Remover Bot</h1>
+        <% if (status === 'authenticated') { %>
+            <p class="success">✅ Successfully authenticated as <%= user %></p>
+            <p>The bot is now running and monitoring groups.</p>
+        <% } else { %>
+            <p class="loading">⏳ Loading, please wait...</p>
+        <% } %>
+    </div>
+</body>
+</html>
