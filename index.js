@@ -1,5 +1,16 @@
+const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode');
+const path = require('path');
+
+// Initialize Express app
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Configure Express
+app.use(express.static(path.join(__dirname, 'public')));
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Initialize WhatsApp client
 const client = new Client({
@@ -16,14 +27,18 @@ const CONFIG = {
     URL_REGEX: /(https?:\/\/|www\.)[^\s]+/gi
 };
 
+// Store QR code data for web display
+let qrCodeData = null;
+
 // Event handlers
-client.on('qr', qr => {
-    console.log('QR Code generated. Scan to authenticate:');
-    qrcode.generate(qr, { small: true });
+client.on('qr', async (qr) => {
+    console.log('QR Code generated');
+    qrCodeData = await qrcode.toDataURL(qr);
 });
 
 client.on('authenticated', () => {
     console.log('Authentication successful!');
+    qrCodeData = null;
 });
 
 client.on('ready', () => {
@@ -74,7 +89,6 @@ client.on('message', async message => {
                     console.log('Deleted message with link');
                 } catch (deleteError) {
                     console.error('Failed to delete message:', deleteError);
-                    // Reaction was already added, so we'll just leave it at that
                 }
             }
         }
@@ -101,6 +115,25 @@ This bot automatically removes all links from all groups (except when sent by ad
 
 // Start the client
 client.initialize();
+
+// Routes
+app.get('/', (req, res) => {
+    if (client.info) {
+        // Already authenticated
+        res.render('status', { status: 'authenticated', user: client.info.pushname });
+    } else if (qrCodeData) {
+        // Show QR code for authentication
+        res.render('index', { qrCodeData });
+    } else {
+        // Loading state
+        res.render('status', { status: 'loading' });
+    }
+});
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
 
 // Handle process termination
 process.on('SIGINT', () => {
